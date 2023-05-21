@@ -2,6 +2,14 @@ import scapy.all as scapy
 import scapy.layers.dhcp as dhcp
 import pysnmp.hlapi as pysnmp
 
+from typing import List, Tuple, Union
+
+SYS_NAME_OID = "1.3.6.1.2.1.1.5"
+ROUTING_TABLE_ENTRY_OID = "1.3.6.1.2.1.4.21.1"
+ROUTING_TABLE_ENTRY_IP_OID = "1.3.6.1.2.1.4.21.1.1"
+ROUTING_TABLE_ENTRY_MASK_OID = "1.3.6.1.2.1.4.21.1.11"
+ROUTING_TABLE_ENTRY_TYPE_OID = "1.3.6.1.2.1.4.21.1.8"
+
 
 def send_dhcp_discover() -> dhcp.Packet:
     dhcp_offer: dhcp.Packet = dhcp.dhcp_request()
@@ -9,11 +17,11 @@ def send_dhcp_discover() -> dhcp.Packet:
     return dhcp_offer
 
 
-def find_router_ip_in_dhcp_offer(dhcp_offer: dhcp.Packet) -> str | None:
+def find_router_ip_in_dhcp_offer(dhcp_offer: dhcp.Packet) -> Union[str, None]:
     return find_router_ip(dhcp_offer["DHCP"].options)
 
 
-def find_router_ip(options: list[tuple[str, str]]) -> str | None:
+def find_router_ip(options: List[Tuple[str, str]]) -> Union[str, None]:
     for option in options:
         if option[0] == "router":
             return option[1]
@@ -21,13 +29,15 @@ def find_router_ip(options: list[tuple[str, str]]) -> str | None:
     return None
 
 
-def get_table_by_ip(ip):
+def get_table_by_ip(ip: str):
     iterator = pysnmp.nextCmd(
         pysnmp.SnmpEngine(),
         pysnmp.CommunityData(communityIndex="public", mpModel=0),
         pysnmp.UdpTransportTarget((ip, 161)),
         pysnmp.ContextData(),
-        pysnmp.ObjectType(pysnmp.ObjectIdentity("SNMPv2-MIB", "sysName", 0)),
+        # pysnmp.ObjectType(pysnmp.ObjectIdentity(SYS_NAME_OID)),
+        pysnmp.ObjectType(pysnmp.ObjectIdentity(ROUTING_TABLE_ENTRY_IP_OID)),
+        pysnmp.ObjectType(pysnmp.ObjectIdentity(ROUTING_TABLE_ENTRY_TYPE_OID)),
         # pysnmp.ObjectType(pysnmp.ObjectIdentity("IF-MIB", "ifDescr")),
         # pysnmp.ObjectType(pysnmp.ObjectIdentity("IF-MIB", "ifType")),
         # pysnmp.ObjectType(pysnmp.ObjectIdentity("IF-MIB", "ifMtu")),
@@ -72,6 +82,10 @@ def main():
 
     dhcp_offer = send_dhcp_discover()
     router_ip = find_router_ip_in_dhcp_offer(dhcp_offer)
+    if not router_ip:
+        print("Default router IP address was not found. Aborting...")
+        return 1
+
     print(router_ip)
     get_table_by_ip(router_ip)
 
