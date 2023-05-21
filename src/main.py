@@ -1,5 +1,6 @@
 import scapy.all as scapy
 import scapy.layers.dhcp as dhcp
+import scapy.layers.l2 as l2
 import pysnmp.hlapi as pysnmp
 
 from typing import List, Tuple, Union
@@ -63,21 +64,19 @@ def get_routing_table_entries(ip: str) -> List[str]:
     return result
 
 
-def filter_table_entries(table_entries: List[str]) -> List[str]:
-    return [entry for entry in table_entries if not entry.endswith(".0")]
+def address_is_local(ip: str) -> bool:
+    return ip.startswith("192.168.") or ip.startswith("10.")
+
+
+def retain_local_net_router_ips(table_entries: List[str]) -> List[str]:
+    return [
+        entry
+        for entry in table_entries
+        if not entry.endswith(".0") and address_is_local(entry)
+    ]
 
 
 def main():
-    interfaces = scapy.conf.ifaces
-    default_iface = scapy.conf.iface
-    print(scapy.get_if_addr(default_iface))
-    print(scapy.get_if_hwaddr(default_iface))
-    # print(get_table_by_ip("192.168.1.1"))
-    print(default_iface)
-    print(interfaces)
-
-    print()
-
     scapy.conf.checkIPaddr = False
 
     dhcp_offer = send_dhcp_discover()
@@ -89,7 +88,7 @@ def main():
     print(router_ip)
     table_entries = get_routing_table_entries(router_ip)
     print(table_entries)
-    router_ips = filter_table_entries(table_entries)
+    router_ips = retain_local_net_router_ips(table_entries)
     print(router_ips)
 
 
