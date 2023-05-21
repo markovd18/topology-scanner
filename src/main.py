@@ -29,24 +29,17 @@ def find_router_ip(options: List[Tuple[str, str]]) -> Union[str, None]:
     return None
 
 
-def get_table_by_ip(ip: str):
+def get_routing_table_entries(ip: str) -> List[str]:
     iterator = pysnmp.nextCmd(
         pysnmp.SnmpEngine(),
         pysnmp.CommunityData(communityIndex="public", mpModel=0),
         pysnmp.UdpTransportTarget((ip, 161)),
         pysnmp.ContextData(),
-        # pysnmp.ObjectType(pysnmp.ObjectIdentity(SYS_NAME_OID)),
         pysnmp.ObjectType(pysnmp.ObjectIdentity(ROUTING_TABLE_ENTRY_IP_OID)),
-        pysnmp.ObjectType(pysnmp.ObjectIdentity(ROUTING_TABLE_ENTRY_TYPE_OID)),
-        # pysnmp.ObjectType(pysnmp.ObjectIdentity("IF-MIB", "ifDescr")),
-        # pysnmp.ObjectType(pysnmp.ObjectIdentity("IF-MIB", "ifType")),
-        # pysnmp.ObjectType(pysnmp.ObjectIdentity("IF-MIB", "ifMtu")),
-        # pysnmp.ObjectType(pysnmp.ObjectIdentity("IF-MIB", "ifSpeed")),
-        # pysnmp.ObjectType(pysnmp.ObjectIdentity("IF-MIB", "ifPhysAddress")),
-        # pysnmp.ObjectType(pysnmp.ObjectIdentity("IF-MIB", "ifType")),
         lexicographicMode=False,
     )
 
+    result: List[str] = []
     for errorIndication, errorStatus, errorIndex, varBinds in iterator:
         if errorIndication:
             print(errorIndication)
@@ -65,6 +58,13 @@ def get_table_by_ip(ip: str):
         else:
             for varBind in varBinds:
                 print(" = ".join([x.prettyPrint() for x in varBind]))
+                result.append(varBind[1].prettyPrint())
+
+    return result
+
+
+def filter_table_entries(table_entries: List[str]) -> List[str]:
+    return [entry for entry in table_entries if not entry.endswith(".0")]
 
 
 def main():
@@ -87,7 +87,10 @@ def main():
         return 1
 
     print(router_ip)
-    get_table_by_ip(router_ip)
+    table_entries = get_routing_table_entries(router_ip)
+    print(table_entries)
+    router_ips = filter_table_entries(table_entries)
+    print(router_ips)
 
 
 if __name__ == "__main__":
