@@ -24,15 +24,16 @@ def find_router_ip(options: list[tuple[str, str]]) -> str | None:
 def get_table_by_ip(ip):
     iterator = pysnmp.nextCmd(
         pysnmp.SnmpEngine(),
-        pysnmp.CommunityData("public", mpModel=0),
+        pysnmp.CommunityData(communityIndex="public", mpModel=0),
         pysnmp.UdpTransportTarget((ip, 161)),
         pysnmp.ContextData(),
-        pysnmp.ObjectType(pysnmp.ObjectIdentity("IF-MIB", "ifDescr")),
-        pysnmp.ObjectType(pysnmp.ObjectIdentity("IF-MIB", "ifType")),
-        pysnmp.ObjectType(pysnmp.ObjectIdentity("IF-MIB", "ifMtu")),
-        pysnmp.ObjectType(pysnmp.ObjectIdentity("IF-MIB", "ifSpeed")),
-        pysnmp.ObjectType(pysnmp.ObjectIdentity("IF-MIB", "ifPhysAddress")),
-        pysnmp.ObjectType(pysnmp.ObjectIdentity("IF-MIB", "ifType")),
+        pysnmp.ObjectType(pysnmp.ObjectIdentity("SNMPv2-MIB", "sysName", 0)),
+        # pysnmp.ObjectType(pysnmp.ObjectIdentity("IF-MIB", "ifDescr")),
+        # pysnmp.ObjectType(pysnmp.ObjectIdentity("IF-MIB", "ifType")),
+        # pysnmp.ObjectType(pysnmp.ObjectIdentity("IF-MIB", "ifMtu")),
+        # pysnmp.ObjectType(pysnmp.ObjectIdentity("IF-MIB", "ifSpeed")),
+        # pysnmp.ObjectType(pysnmp.ObjectIdentity("IF-MIB", "ifPhysAddress")),
+        # pysnmp.ObjectType(pysnmp.ObjectIdentity("IF-MIB", "ifType")),
         lexicographicMode=False,
     )
 
@@ -72,6 +73,7 @@ def main():
     dhcp_offer = send_dhcp_discover()
     router_ip = find_router_ip_in_dhcp_offer(dhcp_offer)
     print(router_ip)
+    get_table_by_ip(router_ip)
 
 
 if __name__ == "__main__":
