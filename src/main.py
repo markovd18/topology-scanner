@@ -37,8 +37,8 @@ def get_routing_table_entries(ip: str) -> List[str]:
         pysnmp.CommunityData(communityIndex="PSIPUB", mpModel=0),
         pysnmp.UdpTransportTarget((ip, 161)),
         pysnmp.ContextData(),
-        pysnmp.ObjectType(pysnmp.ObjectIdentity(ROUTING_TABLE_ENTRY_IP_OID)),
-        pysnmp.ObjectType(pysnmp.ObjectIdentity(ROUTING_TABLE_ENTRY_DIST_OID)),
+        # pysnmp.ObjectType(pysnmp.ObjectIdentity(ROUTING_TABLE_ENTRY_IP_OID)),
+        pysnmp.ObjectType(pysnmp.ObjectIdentity(ROUTING_TABLE_ENTRY_OID)),
         lexicographicMode=False,
     )
 
