@@ -10,6 +10,7 @@ ROUTING_TABLE_ENTRY_OID = "1.3.6.1.2.1.4.21.1"
 ROUTING_TABLE_ENTRY_IP_OID = "1.3.6.1.2.1.4.21.1.1"
 ROUTING_TABLE_ENTRY_MASK_OID = "1.3.6.1.2.1.4.21.1.11"
 ROUTING_TABLE_ENTRY_TYPE_OID = "1.3.6.1.2.1.4.21.1.8"
+ROUTING_TABLE_ENTRY_DIST_OID = "1.3.6.1.2.1.4.21.1.1"
 
 
 def send_dhcp_discover() -> dhcp.Packet:
@@ -33,10 +34,11 @@ def find_router_ip(options: List[Tuple[str, str]]) -> Union[str, None]:
 def get_routing_table_entries(ip: str) -> List[str]:
     iterator = pysnmp.nextCmd(
         pysnmp.SnmpEngine(),
-        pysnmp.CommunityData(communityIndex="public", mpModel=0),
+        pysnmp.CommunityData(communityIndex="PSIPUB", mpModel=0),
         pysnmp.UdpTransportTarget((ip, 161)),
         pysnmp.ContextData(),
         pysnmp.ObjectType(pysnmp.ObjectIdentity(ROUTING_TABLE_ENTRY_IP_OID)),
+        pysnmp.ObjectType(pysnmp.ObjectIdentity(ROUTING_TABLE_ENTRY_DIST_OID)),
         lexicographicMode=False,
     )
 
