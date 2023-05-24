@@ -40,7 +40,6 @@ def get_snmp_object_identity(ip: str, object: pysnmp.ObjectIdentity) -> List[str
         pysnmp.UdpTransportTarget((ip, 161)),
         pysnmp.ContextData(),
         object,
-        pysnmp.ObjectType(pysnmp.ObjectIdentity(ROUTING_TABLE_NEXT_HOP_OID)),
         # pysnmp.ObjectType(pysnmp.ObjectIdentity(ROUTING_TABLE_ENTRY_OID)),
         # pysnmp.ObjectType(pysnmp.ObjectIdentity(IP_ADDRESS_ENTRY_OID)),
         lexicographicMode=False,
@@ -70,18 +69,6 @@ def get_snmp_object_identity(ip: str, object: pysnmp.ObjectIdentity) -> List[str
     return result
 
 
-def address_is_local(ip: str) -> bool:
-    return ip.startswith("192.168.") or ip.startswith("10.")
-
-
-def retain_local_net_router_ips(table_entries: List[str]) -> List[str]:
-    return [
-        entry
-        for entry in table_entries
-        if not entry.endswith(".0") and address_is_local(entry)
-    ]
-
-
 def main():
     scapy.conf.checkIPaddr = False
 
@@ -102,7 +89,7 @@ def main():
         print("Processing %s" % address)
         table_entries = get_snmp_object_identity(
             ip=address,
-            object=pysnmp.ObjectType(pysnmp.ObjectIdentity(ROUTING_TABLE_ENTRY_IP_OID)),
+            object=pysnmp.ObjectType(pysnmp.ObjectIdentity(ROUTING_TABLE_NEXT_HOP_OID)),
         )
         print("table entries")
         print(table_entries)
