@@ -32,15 +32,16 @@ def find_router_ip(options: List[Tuple[str, str]]) -> Union[str, None]:
     return None
 
 
-def get_routing_table_entries(ip: str) -> List[str]:
+def get_snmp_object_identity(ip: str, object: pysnmp.ObjectIdentity) -> List[str]:
     iterator = pysnmp.nextCmd(
         pysnmp.SnmpEngine(),
         pysnmp.CommunityData(communityIndex="PSIPUB", mpModel=0),
         pysnmp.UdpTransportTarget((ip, 161)),
         pysnmp.ContextData(),
+        object,
         # pysnmp.ObjectType(pysnmp.ObjectIdentity(ROUTING_TABLE_ENTRY_IP_OID)),
         # pysnmp.ObjectType(pysnmp.ObjectIdentity(ROUTING_TABLE_ENTRY_OID)),
-        pysnmp.ObjectType(pysnmp.ObjectIdentity(IP_ADDRESS_ENTRY_OID)),
+        # pysnmp.ObjectType(pysnmp.ObjectIdentity(IP_ADDRESS_ENTRY_OID)),
         lexicographicMode=False,
     )
 
@@ -90,10 +91,16 @@ def main():
         return 1
 
     print(router_ip)
-    table_entries = get_routing_table_entries(router_ip)
+    table_entries = get_snmp_object_identity(
+        pysnmp.ObjectType(pysnmp.ObjectIdentity(ROUTING_TABLE_ENTRY_IP_OID))
+    )
     print(table_entries)
-    router_ips = retain_local_net_router_ips(table_entries)
-    print(router_ips)
+    ip_addresses = get_snmp_object_identity(
+        pysnmp.ObjectType(pysnmp.ObjectIdentity(IP_ADDRESS_ENTRY_OID)),
+    )
+    print(ip_addresses)
+    result = [entry for entry in table_entries if entry not in ip_addresses]
+    print(result)
 
 
 if __name__ == "__main__":
