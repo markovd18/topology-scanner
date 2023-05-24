@@ -63,7 +63,7 @@ def get_snmp_object_identity(ip: str, object: pysnmp.ObjectIdentity) -> List[str
 
         else:
             for varBind in varBinds:
-                print(" = ".join([x.prettyPrint() for x in varBind]))
+                # print(" = ".join([x.prettyPrint() for x in varBind]))
                 result.append(varBind[1].prettyPrint())
 
     return result
@@ -98,22 +98,25 @@ def main():
         address = addresses.pop(0)
         if processed.get(address, False) == True:
             continue
-
+        print("Processing %s" % address)
         table_entries = get_snmp_object_identity(
             ip=address,
             object=pysnmp.ObjectType(pysnmp.ObjectIdentity(ROUTING_TABLE_ENTRY_IP_OID)),
         )
+        print("table entries")
         print(table_entries)
         ip_addresses = get_snmp_object_identity(
             ip=address,
             object=pysnmp.ObjectType(pysnmp.ObjectIdentity(IP_ADDRESS_ENTRY_OID)),
         )
+        print("ip addresses")
         print(ip_addresses)
         result = [
             entry
             for entry in table_entries
             if entry not in ip_addresses and entry != "0.0.0.0"
         ]
+        print("filtered result")
         print(result)
         addresses.extend(result)
         processed[address] = True
