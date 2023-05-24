@@ -101,7 +101,11 @@ def main():
         object=pysnmp.ObjectType(pysnmp.ObjectIdentity(IP_ADDRESS_ENTRY_OID)),
     )
     print(ip_addresses)
-    result = [entry for entry in table_entries if entry not in ip_addresses]
+    result = [
+        entry
+        for entry in table_entries
+        if entry not in ip_addresses and entry != "0.0.0.0"
+    ]
     print(result)
 
 
