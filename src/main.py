@@ -96,9 +96,9 @@ def main():
     addresses = [router_ip]
     while len(addresses) > 0:
         address = addresses.pop(0)
-        if processed[address] == True:
+        if processed.get(address, False) == True:
             continue
-        
+
         table_entries = get_snmp_object_identity(
             ip=address,
             object=pysnmp.ObjectType(pysnmp.ObjectIdentity(ROUTING_TABLE_ENTRY_IP_OID)),
