@@ -115,9 +115,9 @@ def main():
     for address in processed:
         sysnames = get_snmp_object_identity(
             ip=address,
-            object=pysnmp.ObjectType(pysnmp.ObjectIdentity(IP_ADDRESS_ENTRY_OID)),
+            object=pysnmp.ObjectType(pysnmp.ObjectIdentity(SYS_NAME_OID)),
         )
-        print("%s - %s" % sysnames[0], address)
+        print("%s - %s" % (sysnames[0], address))
 
 
 if __name__ == "__main__":
