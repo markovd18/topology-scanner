@@ -91,22 +91,32 @@ def main():
         return 1
 
     print(router_ip)
-    table_entries = get_snmp_object_identity(
-        ip=router_ip,
-        object=pysnmp.ObjectType(pysnmp.ObjectIdentity(ROUTING_TABLE_ENTRY_IP_OID)),
-    )
-    print(table_entries)
-    ip_addresses = get_snmp_object_identity(
-        ip=router_ip,
-        object=pysnmp.ObjectType(pysnmp.ObjectIdentity(IP_ADDRESS_ENTRY_OID)),
-    )
-    print(ip_addresses)
-    result = [
-        entry
-        for entry in table_entries
-        if entry not in ip_addresses and entry != "0.0.0.0"
-    ]
-    print(result)
+
+    processed = {}
+    addresses = [router_ip]
+    while len(addresses) > 0:
+        address = addresses.pop(0)
+        if processed[address] == True:
+            continue
+        
+        table_entries = get_snmp_object_identity(
+            ip=address,
+            object=pysnmp.ObjectType(pysnmp.ObjectIdentity(ROUTING_TABLE_ENTRY_IP_OID)),
+        )
+        print(table_entries)
+        ip_addresses = get_snmp_object_identity(
+            ip=address,
+            object=pysnmp.ObjectType(pysnmp.ObjectIdentity(IP_ADDRESS_ENTRY_OID)),
+        )
+        print(ip_addresses)
+        result = [
+            entry
+            for entry in table_entries
+            if entry not in ip_addresses and entry != "0.0.0.0"
+        ]
+        print(result)
+        addresses.extend(result)
+        processed[address] = True
 
 
 if __name__ == "__main__":
