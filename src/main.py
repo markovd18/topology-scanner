@@ -80,17 +80,20 @@ def main():
 
     print(router_ip)
 
-    processed = {}
+    processed = set()
     addresses = [router_ip]
     while len(addresses) > 0:
         address = addresses.pop(0)
-        if processed.get(address, False) == True:
+        if address in processed:
             continue
         print("Processing %s" % address)
         table_entries = get_snmp_object_identity(
             ip=address,
             object=pysnmp.ObjectType(pysnmp.ObjectIdentity(ROUTING_TABLE_NEXT_HOP_OID)),
         )
+        if len(table_entries) == 0:
+            continue
+
         print("table entries")
         print(table_entries)
         ip_addresses = get_snmp_object_identity(
@@ -107,7 +110,14 @@ def main():
         print("filtered result")
         print(result)
         addresses.extend(result)
-        processed[address] = True
+        processed.add(address)
+
+    for address in processed:
+        sysnames = get_snmp_object_identity(
+            ip=address,
+            object=pysnmp.ObjectType(pysnmp.ObjectIdentity(IP_ADDRESS_ENTRY_OID)),
+        )
+        print("%s - %s" % sysnames[0], address)
 
 
 if __name__ == "__main__":
