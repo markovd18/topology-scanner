@@ -92,11 +92,13 @@ def main():
 
     print(router_ip)
     table_entries = get_snmp_object_identity(
-        pysnmp.ObjectType(pysnmp.ObjectIdentity(ROUTING_TABLE_ENTRY_IP_OID))
+        ip=router_ip,
+        object=pysnmp.ObjectType(pysnmp.ObjectIdentity(ROUTING_TABLE_ENTRY_IP_OID)),
     )
     print(table_entries)
     ip_addresses = get_snmp_object_identity(
-        pysnmp.ObjectType(pysnmp.ObjectIdentity(IP_ADDRESS_ENTRY_OID)),
+        ip=router_ip,
+        object=pysnmp.ObjectType(pysnmp.ObjectIdentity(IP_ADDRESS_ENTRY_OID)),
     )
     print(ip_addresses)
     result = [entry for entry in table_entries if entry not in ip_addresses]
