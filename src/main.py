@@ -46,12 +46,18 @@ def main():
         # print("filtered result")
         print(result)
         sysname = get_router_host_name(address)
-        router = Router(ip_addresses=ip_addresses, sys_name=sysname, neighbors=result)
+        router = Router(
+            ip_addresses=ip_addresses, sys_name=sysname, neighbors=set(result)
+        )
         addresses.extend(result)
         processed.add(router)
 
+    print("------------------------")
+    print("\tNetwork topology")
+    print("------------------------")
     for router in processed:
         print(str(router))
+        print("------------------------")
 
 
 if __name__ == "__main__":

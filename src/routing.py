@@ -10,9 +10,9 @@ class Router:
     def __str__(self) -> str:
         return (
             self.__sys_name
-            + "\n\t"
+            + ":\n\t"
             + "\n\t".join(self.__ip_addresses)
-            + "\n\tNeighbors\n\t"
+            + "\nNeighbors:\n\t"
             + "\n\t".join(self.__neighbors)
         )
 
