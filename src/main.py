@@ -9,6 +9,15 @@ from snmp import (
 from typing import Set
 
 
+def print_topology(routers: Set[Router]):
+    print("------------------------")
+    print("\tNetwork topology")
+    print("------------------------")
+    for router in routers:
+        print(str(router))
+        print("------------------------")
+
+
 def main():
     dhcp_offer = send_dhcp_discover()
     if not dhcp_offer:
@@ -33,18 +42,13 @@ def main():
         if len(table_entries) == 0:
             continue
 
-        # print("table entries")
-        print(table_entries)
         ip_addresses = get_router_ip_addresses(address)
-        # print("ip addresses")
-        print(ip_addresses)
         result = [
             entry
             for entry in table_entries
             if entry not in ip_addresses and entry != "0.0.0.0"
         ]
-        # print("filtered result")
-        print(result)
+
         sysname = get_router_host_name(address)
         router = Router(
             ip_addresses=ip_addresses, sys_name=sysname, neighbors=set(result)
@@ -52,12 +56,7 @@ def main():
         addresses.extend(result)
         processed.add(router)
 
-    print("------------------------")
-    print("\tNetwork topology")
-    print("------------------------")
-    for router in processed:
-        print(str(router))
-        print("------------------------")
+    print_topology(processed)
 
 
 if __name__ == "__main__":
