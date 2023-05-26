@@ -1,105 +1,41 @@
-import scapy.all as scapy
-import scapy.layers.dhcp as dhcp
-import scapy.layers.l2 as l2
-import pysnmp.hlapi as pysnmp
+from dhcp import find_router_ip_in_dhcp_offer, send_dhcp_discover
+from routing import Router, has_router_with_ip
+from snmp import (
+    get_router_host_name,
+    get_router_ip_addresses,
+    get_routing_table_next_hop_entries,
+)
 
-from typing import List, Tuple, Union
-
-SYS_NAME_OID = "1.3.6.1.2.1.1.5"
-ROUTING_TABLE_ENTRY_OID = "1.3.6.1.2.1.4.21.1"
-ROUTING_TABLE_ENTRY_IP_OID = "1.3.6.1.2.1.4.21.1.1"
-ROUTING_TABLE_ENTRY_MASK_OID = "1.3.6.1.2.1.4.21.1.11"
-ROUTING_TABLE_ENTRY_TYPE_OID = "1.3.6.1.2.1.4.21.1.8"
-ROUTING_TABLE_ENTRY_DIST_OID = "1.3.6.1.2.1.4.21.1.1"
-IP_ADDRESS_ENTRY_OID = "1.3.6.1.2.1.4.20.1.1"
-ROUTING_TABLE_NEXT_HOP_OID = "1.3.6.1.2.1.4.21.1.7"
-
-
-def send_dhcp_discover() -> dhcp.Packet:
-    dhcp_offer: dhcp.Packet = dhcp.dhcp_request()
-    dhcp_offer.display()
-    return dhcp_offer
-
-
-def find_router_ip_in_dhcp_offer(dhcp_offer: dhcp.Packet) -> Union[str, None]:
-    return find_router_ip(dhcp_offer["DHCP"].options)
-
-
-def find_router_ip(options: List[Tuple[str, str]]) -> Union[str, None]:
-    for option in options:
-        if option[0] == "router":
-            return option[1]
-
-    return None
-
-
-def get_snmp_object_identity(ip: str, object: pysnmp.ObjectIdentity) -> List[str]:
-    iterator = pysnmp.nextCmd(
-        pysnmp.SnmpEngine(),
-        pysnmp.CommunityData(communityIndex="PSIPUB", mpModel=0),
-        pysnmp.UdpTransportTarget((ip, 161)),
-        pysnmp.ContextData(),
-        object,
-        # pysnmp.ObjectType(pysnmp.ObjectIdentity(ROUTING_TABLE_ENTRY_OID)),
-        # pysnmp.ObjectType(pysnmp.ObjectIdentity(IP_ADDRESS_ENTRY_OID)),
-        lexicographicMode=False,
-    )
-
-    result: List[str] = []
-    for errorIndication, errorStatus, errorIndex, varBinds in iterator:
-        if errorIndication:
-            print(errorIndication)
-            break
-
-        elif errorStatus:
-            print(
-                "%s at %s"
-                % (
-                    errorStatus.prettyPrint(),
-                    errorIndex and varBinds[int(errorIndex) - 1][0] or "?",
-                )
-            )
-            break
-
-        else:
-            for varBind in varBinds:
-                # print(" = ".join([x.prettyPrint() for x in varBind]))
-                result.append(varBind[1].prettyPrint())
-
-    return result
+from typing import Set
 
 
 def main():
-    scapy.conf.checkIPaddr = False
-
     dhcp_offer = send_dhcp_discover()
+    if not dhcp_offer:
+        print("DHCP Offer packet was not receiver. Unable to scan network topology.")
+        return 1
+
     router_ip = find_router_ip_in_dhcp_offer(dhcp_offer)
     if not router_ip:
         print("Default router IP address was not found. Aborting...")
         return 1
 
     print(router_ip)
-
-    processed = set()
+    processed: Set[Router] = set()
     addresses = [router_ip]
     while len(addresses) > 0:
         address = addresses.pop(0)
-        if address in processed:
+        if has_router_with_ip(processed, address):
             continue
+
         print("Processing %s" % address)
-        table_entries = get_snmp_object_identity(
-            ip=address,
-            object=pysnmp.ObjectType(pysnmp.ObjectIdentity(ROUTING_TABLE_NEXT_HOP_OID)),
-        )
+        table_entries = get_routing_table_next_hop_entries(address)
         if len(table_entries) == 0:
             continue
 
         print("table entries")
         print(table_entries)
-        ip_addresses = get_snmp_object_identity(
-            ip=address,
-            object=pysnmp.ObjectType(pysnmp.ObjectIdentity(IP_ADDRESS_ENTRY_OID)),
-        )
+        ip_addresses = get_router_ip_addresses(address)
         print("ip addresses")
         print(ip_addresses)
         result = [
@@ -109,15 +45,13 @@ def main():
         ]
         print("filtered result")
         print(result)
+        sysname = get_router_host_name(address)
+        router = Router(ip_addresses=result, sys_name=sysname)
         addresses.extend(result)
-        processed.add(address)
+        processed.add(router)
 
-    for address in processed:
-        sysnames = get_snmp_object_identity(
-            ip=address,
-            object=pysnmp.ObjectType(pysnmp.ObjectIdentity(SYS_NAME_OID)),
-        )
-        print("%s - %s" % (sysnames[0], address))
+    for router in processed:
+        print(str(router))
 
 
 if __name__ == "__main__":

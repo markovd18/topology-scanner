@@ -5,5 +5,5 @@ apt update && \
   apt install git && \
   apt install pip && \
   pip install pysnmp && \
-  pip unsinstall pyasn1 && \
+  pip uninstall pyasn1 && \
   pip install pyasn1==0.4.8
