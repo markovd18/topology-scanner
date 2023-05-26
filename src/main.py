@@ -33,17 +33,17 @@ def main():
         if len(table_entries) == 0:
             continue
 
-        print("table entries")
+        # print("table entries")
         print(table_entries)
         ip_addresses = get_router_ip_addresses(address)
-        print("ip addresses")
+        # print("ip addresses")
         print(ip_addresses)
         result = [
             entry
             for entry in table_entries
             if entry not in ip_addresses and entry != "0.0.0.0"
         ]
-        print("filtered result")
+        # print("filtered result")
         print(result)
         sysname = get_router_host_name(address)
         router = Router(ip_addresses=ip_addresses, sys_name=sysname)

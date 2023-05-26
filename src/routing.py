@@ -2,12 +2,19 @@ from typing import Set
 
 
 class Router:
-    def __init__(self, ip_addresses: Set[str], sys_name: str):
+    def __init__(self, ip_addresses: Set[str], sys_name: str, neighbors: Set[str]):
         self.__ip_addresses = ip_addresses
         self.__sys_name = sys_name
+        self.__neighbors = neighbors
 
     def __str__(self) -> str:
-        return self.__sys_name + "\n" + "\n\t".join(self.__ip_addresses)
+        return (
+            self.__sys_name
+            + "\n\t"
+            + "\n\t".join(self.__ip_addresses)
+            + "\n\tNeighbors\n\t"
+            + "\n\t".join(self.__neighbors)
+        )
 
     def __eq__(self, __value: object) -> bool:
         return str(self.__ip_addresses) == str(__value.__ip_addresses)
