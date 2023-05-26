@@ -1,77 +1,61 @@
-import scapy.all as scapy
-import scapy.layers.dhcp as dhcp
-import pysnmp.hlapi as pysnmp
+from dhcp import find_router_ip_in_dhcp_offer, send_dhcp_discover
+from routing import Router, has_router_with_ip
+from snmp import (
+    get_router_host_name,
+    get_router_ip_addresses,
+    get_routing_table_next_hop_entries,
+)
+
+from typing import Set
 
 
-def send_dhcp_discover() -> dhcp.Packet:
-    dhcp_offer: dhcp.Packet = dhcp.dhcp_request()
-    dhcp_offer.display()
-    return dhcp_offer
-
-
-def find_router_ip_in_dhcp_offer(dhcp_offer: dhcp.Packet) -> str | None:
-    return find_router_ip(dhcp_offer["DHCP"].options)
-
-
-def find_router_ip(options: list[tuple[str, str]]) -> str | None:
-    for option in options:
-        if option[0] == "router":
-            return option[1]
-
-    return None
-
-
-def get_table_by_ip(ip):
-    iterator = pysnmp.nextCmd(
-        pysnmp.SnmpEngine(),
-        pysnmp.CommunityData("public", mpModel=0),
-        pysnmp.UdpTransportTarget((ip, 161)),
-        pysnmp.ContextData(),
-        pysnmp.ObjectType(pysnmp.ObjectIdentity("IF-MIB", "ifDescr")),
-        pysnmp.ObjectType(pysnmp.ObjectIdentity("IF-MIB", "ifType")),
-        pysnmp.ObjectType(pysnmp.ObjectIdentity("IF-MIB", "ifMtu")),
-        pysnmp.ObjectType(pysnmp.ObjectIdentity("IF-MIB", "ifSpeed")),
-        pysnmp.ObjectType(pysnmp.ObjectIdentity("IF-MIB", "ifPhysAddress")),
-        pysnmp.ObjectType(pysnmp.ObjectIdentity("IF-MIB", "ifType")),
-        lexicographicMode=False,
-    )
-
-    for errorIndication, errorStatus, errorIndex, varBinds in iterator:
-        if errorIndication:
-            print(errorIndication)
-            break
-
-        elif errorStatus:
-            print(
-                "%s at %s"
-                % (
-                    errorStatus.prettyPrint(),
-                    errorIndex and varBinds[int(errorIndex) - 1][0] or "?",
-                )
-            )
-            break
-
-        else:
-            for varBind in varBinds:
-                print(" = ".join([x.prettyPrint() for x in varBind]))
+def print_topology(routers: Set[Router]):
+    print("------------------------")
+    print("\tNetwork topology")
+    print("------------------------")
+    for router in routers:
+        print(str(router))
+        print("------------------------")
 
 
 def main():
-    interfaces = scapy.conf.ifaces
-    default_iface = scapy.conf.iface
-    print(scapy.get_if_addr(default_iface))
-    print(scapy.get_if_hwaddr(default_iface))
-    # print(get_table_by_ip("192.168.1.1"))
-    print(default_iface)
-    print(interfaces)
-
-    print()
-
-    scapy.conf.checkIPaddr = False
-
     dhcp_offer = send_dhcp_discover()
+    if not dhcp_offer:
+        print("DHCP Offer packet was not receiver. Unable to scan network topology.")
+        return 1
+
     router_ip = find_router_ip_in_dhcp_offer(dhcp_offer)
-    print(router_ip)
+    if not router_ip:
+        print("Default router IP address was not found. Aborting...")
+        return 1
+
+    processed: Set[Router] = set()
+    addresses = [router_ip]
+    while len(addresses) > 0:
+        address = addresses.pop(0)
+        if has_router_with_ip(processed, address):
+            continue
+
+        print("Processing %s" % address)
+        table_entries = get_routing_table_next_hop_entries(address)
+        if len(table_entries) == 0:
+            continue
+
+        ip_addresses = get_router_ip_addresses(address)
+        result = [
+            entry
+            for entry in table_entries
+            if entry not in ip_addresses and entry != "0.0.0.0"
+        ]
+
+        sysname = get_router_host_name(address)
+        router = Router(
+            ip_addresses=ip_addresses, sys_name=sysname, neighbors=set(result)
+        )
+        addresses.extend(result)
+        processed.add(router)
+
+    print_topology(processed)
 
 
 if __name__ == "__main__":
