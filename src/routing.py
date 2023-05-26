@@ -10,12 +10,10 @@ class Router:
         return self.__sys_name + "\n" + "\n\t".join(self.__ip_addresses)
 
     def __eq__(self, __value: object) -> bool:
-        return self.__sys_name == __value.__sys_name and str(
-            self.__ip_addresses
-        ) == str(__value.__ip_addresses)
+        return str(self.__ip_addresses) == str(__value.__ip_addresses)
 
     def __hash__(self) -> int:
-        return hash(self.__sys_name) + hash(self.__ip_addresses)
+        return hash(tuple(self.__ip_addresses))
 
     def has_ip_address(self, ip_address: str) -> bool:
         return ip_address in self.__ip_addresses
