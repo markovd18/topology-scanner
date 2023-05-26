@@ -10,6 +10,7 @@ from typing import Set
 
 
 def print_topology(routers: Set[Router]):
+    """Prints network topology."""
     print("------------------------")
     print("\tNetwork topology")
     print("------------------------")
