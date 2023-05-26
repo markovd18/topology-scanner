@@ -14,6 +14,9 @@ class Router:
             self.__ip_addresses
         ) == str(__value.__ip_addresses)
 
+    def __hash__(self) -> int:
+        return hash(self.__sys_name) + hash(self.__ip_addresses)
+
     def has_ip_address(self, ip_address: str) -> bool:
         return ip_address in self.__ip_addresses
 
