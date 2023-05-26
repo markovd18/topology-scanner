@@ -29,7 +29,6 @@ def main():
         print("Default router IP address was not found. Aborting...")
         return 1
 
-    print(router_ip)
     processed: Set[Router] = set()
     addresses = [router_ip]
     while len(addresses) > 0:
