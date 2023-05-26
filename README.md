@@ -35,7 +35,7 @@ pip install scapy
 ## Usage
 After prerequisites are met you may go ahead and execute the application by running 
 ```bash
-python src/main.py
+python3 src/main.py
 ```
 in project root. Application takes no arguments from the CLI.
 
