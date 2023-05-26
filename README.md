@@ -15,7 +15,7 @@ apt update && \
 
 Once these prerequisites are met you may clone this repository by running
 ```bash
-git clone https://github.com/markovd18/tpc-client-server.git
+git clone https://github.com/markovd18/topology-scanner.git
 ```
 Then you may proceed and `cd` into the project root directory.
 
